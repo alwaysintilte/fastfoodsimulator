@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class Server implements Runnable {
     @Autowired
-    private Kitchen kitchen;
+    private KitchenService kitchenService;
     private boolean running;
     public Server(){}
     public void stop(){
@@ -20,7 +20,7 @@ public class Server implements Runnable {
     public void run(){
         while (running) {
             try{
-                OrderTicket orderTicket = kitchen.getReadyQueue().take();
+                OrderTicket orderTicket = kitchenService.getReadyQueue().take();
                 orderTicket.getServerPromise().thenAccept(voidResult -> {
                     orderTicket.getCustomerPromise().complete(null);
                 });

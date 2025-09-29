@@ -1,8 +1,9 @@
 package com.example.fastfoodsimulator.controllers;
 
 import com.example.fastfoodsimulator.services.CustomerGenerator;
-import com.example.fastfoodsimulator.services.Kitchen;
+import com.example.fastfoodsimulator.services.KitchenService;
 import com.example.fastfoodsimulator.services.Server;
+import com.example.fastfoodsimulator.services.WaiterService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,25 +15,30 @@ import java.util.concurrent.Executors;
 public class SimulationController {
     private ExecutorService executorService;
     @Autowired
-    private CustomerGenerator generator;
+    private CustomerGenerator customerGenerator;
     @Autowired
-    private Kitchen kitchen;
+    private WaiterService waiterService;
+    @Autowired
+    private KitchenService kitchenService;
     @Autowired
     private Server server;
     private boolean isRunning = false;
     @GetMapping("/start")
-    public void startSimulation(@RequestParam int kitchenCompletionTime, @RequestParam int customerArrivalTime){
+    public void startSimulation(@RequestParam int kitchenCompletionTime, @RequestParam int waiterServingTime, @RequestParam int customerArrivalTime){
         if(isRunning){
             return;
         }
-        executorService = Executors.newFixedThreadPool(3);
-        generator.setInterval(customerArrivalTime);
-        kitchen.setInterval(kitchenCompletionTime);
-        generator.start();
-        kitchen.start();
+        executorService = Executors.newFixedThreadPool(4);
+        customerGenerator.setInterval(customerArrivalTime);
+        waiterService.setInterval(waiterServingTime);
+        kitchenService.setInterval(kitchenCompletionTime);
+        customerGenerator.start();
+        waiterService.start();
+        kitchenService.start();
         server.start();
-        executorService.submit(generator);
-        executorService.submit(kitchen);
+        executorService.submit(customerGenerator);
+        executorService.submit(waiterService);
+        executorService.submit(kitchenService);
         executorService.submit(server);
         isRunning = true;
     }
@@ -41,8 +47,9 @@ public class SimulationController {
         if (!isRunning){
             return;
         }
-        generator.stop();
-        kitchen.stop();
+        customerGenerator.stop();
+        waiterService.stop();
+        kitchenService.stop();
         server.stop();
         executorService.shutdownNow();
         isRunning = false;

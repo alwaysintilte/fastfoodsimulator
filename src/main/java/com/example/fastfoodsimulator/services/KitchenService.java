@@ -1,7 +1,7 @@
 package com.example.fastfoodsimulator.services;
 
+import com.example.fastfoodsimulator.WebSocket.WebSocketService;
 import com.example.fastfoodsimulator.models.OrderTicket;
-import com.example.fastfoodsimulator.services.OrderTaker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -9,13 +9,15 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 @Service
-public class Kitchen implements Runnable {
+public class KitchenService implements Runnable {
     @Autowired
-    private OrderTaker orderTaker;
+    private WaiterService waiterService;
+    @Autowired
+    private WebSocketService webSocketService;
     private final BlockingQueue<OrderTicket> readyQueue = new LinkedBlockingQueue<>();
     private Integer interval;
     private boolean running;
-    public Kitchen(){
+    public KitchenService(){
         this.interval = 2000;
     }
     public void setInterval(Integer interval){
@@ -34,8 +36,10 @@ public class Kitchen implements Runnable {
     public void run(){
         while (running) {
             try{
-                OrderTicket orderTicket = orderTaker.getOrderQueue().take();
+                OrderTicket orderTicket = waiterService.getOrderQueue().take();
+                webSocketService.orderStartCooking("Повар начал готовить: "+orderTicket.getOrder().getOrderItem()+". Айди заказа: "+orderTicket.getOrder().getOrderId());
                 Thread.sleep(interval);
+                webSocketService.orderEndCooking("Повар закончил готовить: "+orderTicket.getOrder().getOrderItem()+". Айди заказа: "+orderTicket.getOrder().getOrderId());
                 readyQueue.put(orderTicket);
                 orderTicket.getServerPromise().complete(null);
             } catch (InterruptedException e){
