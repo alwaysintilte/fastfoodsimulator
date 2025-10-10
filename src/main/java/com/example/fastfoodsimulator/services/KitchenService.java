@@ -1,7 +1,10 @@
 package com.example.fastfoodsimulator.services;
 
 import com.example.fastfoodsimulator.WebSocket.WebSocketService;
+import com.example.fastfoodsimulator.models.Cook;
 import com.example.fastfoodsimulator.models.OrderTicket;
+import com.example.fastfoodsimulator.models.Waiter;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -10,6 +13,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 @Service
 public class KitchenService implements Runnable {
+    private Cook cook;
     @Autowired
     private WaiterService waiterService;
     @Autowired
@@ -34,6 +38,11 @@ public class KitchenService implements Runnable {
     }
     public void start(){
         running = true;
+        cook.setInterval(interval);
+    }
+    @PostConstruct
+    public void init() {
+        this.cook = new Cook();
     }
     @Override
     public void run(){
@@ -41,7 +50,7 @@ public class KitchenService implements Runnable {
             try{
                 OrderTicket orderTicket = waiterService.getOrderQueue().take().getOrderTicket();
                 webSocketService.orderStartCooking("Повар начал готовить: "+orderTicket.getOrder().getOrderItem()+". Айди заказа: "+orderTicket.getOrder().getOrderId());
-                Thread.sleep(interval);
+                cook.cookOrder();
                 webSocketService.orderEndCooking("Повар закончил готовить: "+orderTicket.getOrder().getOrderItem()+". Айди заказа: "+orderTicket.getOrder().getOrderId());
                 readyQueue.put(orderTicket);
                 orderTicket.getServerPromise().complete(null);

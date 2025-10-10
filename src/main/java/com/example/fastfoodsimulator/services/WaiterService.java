@@ -61,7 +61,7 @@ public class WaiterService implements Runnable {
                 Customer customer = customerGenerator.getCustomerQueue().take();
                 customer.setOrderTicket(waiter.takeOrder());
                 webSocketService.orderStartCreation(customer.getName()+" начал делать заказ: "+customer.getOrderTicket().getOrder().getOrderItem()+". Айди заказа: "+customer.getOrderTicket().getOrder().getOrderId());
-                Thread.sleep(interval);
+                waiter.processOrder();
                 webSocketService.orderEndCreation(customer.getName()+" закончил делать заказ: "+customer.getOrderTicket().getOrder().getOrderItem()+". Заказ начат. Айди заказа: "+customer.getOrderTicket().getOrder().getOrderId());
                 orderQueue.put(customer);
                 waitingQueue.put(customer);
