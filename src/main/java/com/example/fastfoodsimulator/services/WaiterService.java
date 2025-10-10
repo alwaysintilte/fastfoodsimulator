@@ -3,16 +3,17 @@ package com.example.fastfoodsimulator.services;
 import com.example.fastfoodsimulator.WebSocket.WebSocketService;
 import com.example.fastfoodsimulator.models.Customer;
 import com.example.fastfoodsimulator.models.Waiter;
-import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
 
 @Service
-public class WaiterService implements Runnable {
-    private Waiter waiter;
+public class WaiterService {
+    private List<Waiter> waiters = new ArrayList<>();
+    private ExecutorService executorService;
     @Autowired
     private CustomerGenerator customerGenerator;
     @Autowired
@@ -21,6 +22,7 @@ public class WaiterService implements Runnable {
     private final BlockingQueue<Customer> orderQueue = new LinkedBlockingQueue<>();
     private final BlockingQueue<Customer> waitingQueue = new LinkedBlockingQueue<>();
     private Integer interval;
+    private Integer waiterCount = 1;
     private boolean running;
     public WaiterService(){}
     public BlockingQueue<Customer> getOrderQueue() {
@@ -38,24 +40,29 @@ public class WaiterService implements Runnable {
     public void setInterval(Integer interval){
         this.interval = interval;
     }
+    public void setWaiterCount(Integer waiterCount){
+        this.waiterCount = waiterCount;
+    }
     public void stop() {
         running = false;
+        executorService.shutdownNow();
         clearOrderQueue();
         clearWaitingQueue();
     }
     public void start() {
         running=true;
         orderCounter=0;
-        waiter.setCounter(orderCounter);
-        waiter.setInterval(interval);
+        executorService = Executors.newFixedThreadPool(waiterCount);
+        waiters.clear();
+        for (int i = 0; i < waiterCount; i++) {
+            Waiter waiter = new Waiter();
+            waiter.setCounter(orderCounter);
+            waiter.setInterval(interval);
+            waiters.add(waiter);
+            executorService.submit(() -> runWaiter(waiter));
+        }
     }
-
-    @PostConstruct
-    public void init() {
-        this.waiter = new Waiter();
-    }
-    @Override
-    public void run(){
+    public void runWaiter(Waiter waiter){
         while (running) {
             try {
                 Customer customer = customerGenerator.getCustomerQueue().take();
@@ -71,6 +78,7 @@ public class WaiterService implements Runnable {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 System.out.println(e.getMessage());
+                break;
             }
         }
     }

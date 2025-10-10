@@ -6,10 +6,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
 @Service
-public class CustomerGenerator implements Runnable {
+public class CustomerGenerator{
+    private ExecutorService executorService;
     @Autowired
     private WebSocketService webSocketService;
     private final BlockingQueue<Customer> customerQueue = new LinkedBlockingQueue<>();
@@ -27,13 +30,15 @@ public class CustomerGenerator implements Runnable {
     }
     public void stop() {
         running=false;
+        executorService.shutdownNow();
         clearCustomerQueue();
     }
     public void start() {
         running=true;
+        executorService = Executors.newFixedThreadPool(1);
+        executorService.submit(() -> runGenerator());
     }
-    @Override
-    public void run(){
+    public void runGenerator(){
         while (running) {
             try {
                 Customer customer = new Customer();

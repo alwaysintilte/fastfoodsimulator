@@ -5,10 +5,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
 @Service
-public class Server implements Runnable {
+public class Server{
+    private ExecutorService executorService;
     @Autowired
     private WaiterService waiterService;
     private final BlockingQueue<Customer> customerQueue = new LinkedBlockingQueue<>();
@@ -19,13 +22,15 @@ public class Server implements Runnable {
     public Server(){}
     public void stop(){
         running = false;
+        executorService.shutdownNow();
         clearCustomerQueue();
     }
     public void start(){
         running = true;
+        executorService = Executors.newFixedThreadPool(1);
+        executorService.submit(() -> runServer());
     }
-    @Override
-    public void run(){
+    public void runServer(){
         while (running) {
             try{
                 Customer customer = waiterService.getWaitingQueue().take();

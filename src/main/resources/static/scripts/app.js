@@ -78,6 +78,7 @@ class FastFoodSimulator {
 
     logCustomerCreation(message) {
         this.addLog(message, 'customer');
+        this.checkWaiters();
         this.stats.totalCustomers++;
         this.stats.customerCounter++;
         this.updateCustomerQueue(1);
@@ -87,15 +88,16 @@ class FastFoodSimulator {
 
     logOrderStart(message) {
         this.addLog(message, 'order');
-        this.updateCurrentOrder(this.extractOrderId(message));
+        this.addCurrentOrderList(this.extractOrderId(message));
         this.updateCustomerQueue(-1);
         this.removeFromWaiterCustomerList();
     }
 
     logOrderEnd(message) {
         this.addLog(message, 'order');
+        this.checkCooks();
         this.stats.processedOrders++;
-        this.updateCurrentOrder('-');
+        this.removeCurrentOrderList(this.extractOrderId(message));
         this.updateKitchenQueue(1);
         this.addToKitchenOrderList(message);
         this.updateWaitingCustomers(1);
@@ -105,14 +107,14 @@ class FastFoodSimulator {
 
     logCookingStart(message) {
         this.addLog(message, 'kitchen');
-        this.updateCookingOrder(this.extractOrderId(message));
+        this.addCookingOrderList(this.extractOrderId(message));
         this.updateKitchenQueue(-1);
         this.removeFromKitchenOrderList();
     }
 
     logCookingEnd(message) {
         this.addLog(message, 'kitchen');
-        this.updateCookingOrder('-');
+        this.removeCookingOrderList(this.extractOrderId(message));
         this.updateReadyOrder(this.extractOrderId(message));
 
         setTimeout(() => {
@@ -128,14 +130,22 @@ class FastFoodSimulator {
         this.updateStatistics();
     }
 
-    logKitchenError(message) {
-        this.addLog(`Ошибка на кухне: ${message}`, 'error');
-        this.endSimulation();
+    checkWaiters(message) {
+        const countElement = document.getElementById('customerQueueCount');
+        let currentCount = parseInt(countElement.textContent) || 0;
+        if(currentCount>=20){
+            this.addLog('Ошибка у официанта.', 'error');
+            this.endSimulation();
+        }
     }
 
-    logWaiterError(message) {
-        this.addLog(`Ошибка у официанта: ${message}`, 'error');
-        this.endSimulation();
+    checkCooks(message) {
+        const countElement = document.getElementById('kitchenOrdersCount');
+        let currentCount = parseInt(countElement.textContent) || 0;
+        if(currentCount>=20){
+            this.addLog('Ошибка на кухне.', 'error');
+            this.endSimulation();
+        }
     }
 
     startSimulation() {
@@ -147,15 +157,16 @@ class FastFoodSimulator {
         const customerArrivalTime = document.getElementById('customerArrivalTime').value;
         const waiterServingTime = document.getElementById('waiterServingTime').value;
         const kitchenCompletionTime = document.getElementById('kitchenCompletionTime').value;
+        const waiterCount = document.getElementById('waiterCount').value;
+        const cookCount = document.getElementById('cookCount').value;
 
-        if (!this.validateSimulationParameters(customerArrivalTime, waiterServingTime, kitchenCompletionTime)) {
+        if (!this.validateSimulationParameters(customerArrivalTime, waiterServingTime, kitchenCompletionTime, waiterCount, cookCount)) {
             return;
         }
 
-        // Reset statistics
         this.resetStatistics();
 
-        fetch(`/simulation/start?kitchenCompletionTime=${kitchenCompletionTime}&waiterServingTime=${waiterServingTime}&customerArrivalTime=${customerArrivalTime}`)
+        fetch(`/simulation/start?kitchenCompletionTime=${kitchenCompletionTime}&waiterServingTime=${waiterServingTime}&customerArrivalTime=${customerArrivalTime}&waiterCount=${waiterCount}&cookCount=${cookCount}`)
             .then(response => {
                 if (response.ok) {
                     this.setSimulationState(true);
@@ -185,13 +196,17 @@ class FastFoodSimulator {
             });
     }
 
-    validateSimulationParameters(customer, waiter, kitchen) {
+    validateSimulationParameters(customer, waiter, kitchen, waiterCount, cookCount) {
         if (customer < 1000 || waiter < 1000 || kitchen < 1000) {
             console.log('Все интервалы должны быть не менее 1000 мс');
             return false;
         }
         if (customer > 10000 || waiter > 10000 || kitchen > 10000) {
             console.log('Все интервалы должны быть не более 10000 мс');
+            return false;
+        }
+        if (waiterCount < 1 || cookCount < 1) {
+            console.log('Количество официантов и поваров должно быть не менее 1');
             return false;
         }
         return true;
@@ -229,8 +244,20 @@ class FastFoodSimulator {
         countElement.textContent = currentCount;
     }
 
-    updateCurrentOrder(orderId) {
-        document.getElementById('currentOrder').textContent = orderId;
+    addCurrentOrderList(orderId) {
+        const listElement = document.getElementById('currentOrdersList');
+        const listItem = document.createElement('div');
+        listItem.className = 'queue-item';
+        listItem.textContent = `Заказ №${orderId}`;
+        listItem.setAttribute('data-order-id', orderId);
+        listElement.appendChild(listItem);
+    }
+    removeCurrentOrderList(orderId) {
+        const currentList = document.getElementById('currentOrdersList');
+        const orderElement = currentList.querySelector(`[data-order-id="${orderId}"]`);
+        if (orderElement) {
+            currentList.removeChild(orderElement);
+        }
     }
 
     addToWaiterCustomerList(message) {
@@ -257,8 +284,20 @@ class FastFoodSimulator {
         countElement.textContent = currentCount;
     }
 
-    updateCookingOrder(orderId) {
-        document.getElementById('cookingOrder').textContent = orderId;
+    addCookingOrderList(orderId) {
+        const listElement = document.getElementById('cookingOrdersList');
+        const listItem = document.createElement('div');
+        listItem.className = 'queue-item';
+        listItem.textContent = `Заказ №${orderId}`;
+        listItem.setAttribute('data-order-id', orderId);
+        listElement.appendChild(listItem);
+    }
+    removeCookingOrderList(orderId) {
+        const cookingList = document.getElementById('cookingOrdersList');
+        const orderElement = cookingList.querySelector(`[data-order-id="${orderId}"]`);
+        if (orderElement) {
+            cookingList.removeChild(orderElement);
+        }
     }
 
     addToKitchenOrderList(message) {
@@ -328,10 +367,10 @@ class FastFoodSimulator {
 
     clearAllData() {
         document.getElementById('customerQueueCount').textContent = '0';
-        document.getElementById('currentOrder').textContent = '-';
+        document.getElementById('currentOrdersList').textContent = '';
         document.getElementById('waiterCustomerList').innerHTML = '';
         document.getElementById('kitchenOrdersCount').textContent = '0';
-        document.getElementById('cookingOrder').textContent = '-';
+        document.getElementById('cookingOrdersList').textContent = '';
         document.getElementById('kitchenOrderList').innerHTML = '';
         document.getElementById('waitingCustomers').textContent = '0';
         document.getElementById('readyOrder').textContent = '-';
