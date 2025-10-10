@@ -17,17 +17,20 @@ public class KitchenService implements Runnable {
     private final BlockingQueue<OrderTicket> readyQueue = new LinkedBlockingQueue<>();
     private Integer interval;
     private boolean running;
-    public KitchenService(){
-        this.interval = 2000;
-    }
+    public KitchenService(){}
     public void setInterval(Integer interval){
         this.interval = interval;
     }
     public BlockingQueue<OrderTicket> getReadyQueue() {
         return readyQueue;
     }
+    public void clearReadyQueue() {
+        readyQueue.clear();
+    }
     public void stop(){
+        clearReadyQueue();
         running = false;
+
     }
     public void start(){
         running = true;
@@ -36,7 +39,7 @@ public class KitchenService implements Runnable {
     public void run(){
         while (running) {
             try{
-                OrderTicket orderTicket = waiterService.getOrderQueue().take();
+                OrderTicket orderTicket = waiterService.getOrderQueue().take().getOrderTicket();
                 webSocketService.orderStartCooking("Повар начал готовить: "+orderTicket.getOrder().getOrderItem()+". Айди заказа: "+orderTicket.getOrder().getOrderId());
                 Thread.sleep(interval);
                 webSocketService.orderEndCooking("Повар закончил готовить: "+orderTicket.getOrder().getOrderItem()+". Айди заказа: "+orderTicket.getOrder().getOrderId());

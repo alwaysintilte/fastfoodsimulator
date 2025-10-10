@@ -1,23 +1,123 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
-    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.0/dist/sockjs.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fast Food Simulator</title>
+    <link rel="stylesheet" href="styles/style.css">
 </head>
 <body>
-    <label for="kitchenCompletionTime">kitchenCompletionTime:</label>
-    <input type="text" id="kitchenCompletionTime"><br><br>
+<div class="container">
+    <header class="header">
+        <h1>Fast Food Simulator</h1>
+        <p>Симулятор работы ресторана быстрого питания</p>
+    </header>
 
-    <label for="customerArrivalTime">customerArrivalTime:</label>
-    <input type="text" id="customerArrivalTime"><br><br>
+    <section class="control-panel">
+        <div class="input-group">
+            <div class="input-field">
+                <label for="customerArrivalTime">Интервал прибытия клиентов (мс)</label>
+                <input type="number" id="customerArrivalTime" value="5000" min="1000" max="10000">
+            </div>
+            <div class="input-field">
+                <label for="waiterServingTime">Интервал принятия заказа (мс)</label>
+                <input type="number" id="waiterServingTime" value="2000" min="1000" max="10000">
+            </div>
+            <div class="input-field">
+                <label for="kitchenCompletionTime">Интервал приготовления (мс)</label>
+                <input type="number" id="kitchenCompletionTime" value="3000" min="1000" max="10000">
+            </div>
+        </div>
 
-    <label for="waiterServingTime">waiterServingTime:</label>
-    <input type="text" id="waiterServingTime"><br><br>
+        <div class="button-group">
+            <button id="startBtn" class="btn btn-start">Запуск симуляции</button>
+            <button id="endBtn" class="btn btn-stop" disabled>Остановить симуляцию</button>
+        </div>
+    </section>
 
-    <button id="start">Start simulation</button>
-    <button id="end">End simulation</button>
-    <script src="scripts/script.js"></script>
+    <section class="simulation-area">
+        <div class="area">
+            <h2>Официант</h2>
+            <div class="status-box">
+                <div class="status-label">Клиентов в очереди</div>
+                <div id="customerQueueCount" class="status-value">0</div>
+            </div>
+            <div class="status-box">
+                <div class="status-label">Текущий заказ</div>
+                <div id="currentOrder" class="status-value">-</div>
+            </div>
+            <div class="queue-box">
+                <div class="queue-label">Список клиентов в очереди</div>
+                <div id="waiterCustomerList" class="queue-items"></div>
+            </div>
+        </div>
+
+        <div class="area">
+            <h2>Кухня</h2>
+            <div class="status-box">
+                <div class="status-label">Заказов в очереди</div>
+                <div id="kitchenOrdersCount" class="status-value">0</div>
+            </div>
+            <div class="status-box">
+                <div class="status-label">Готовится заказ</div>
+                <div id="cookingOrder" class="status-value">-</div>
+            </div>
+            <div class="queue-box">
+                <div class="queue-label">Список заказов в очереди</div>
+                <div id="kitchenOrderList" class="queue-items"></div>
+            </div>
+        </div>
+
+        <div class="area">
+            <h2>Стойка выдачи</h2>
+            <div class="status-box">
+                <div class="status-label">Клиентов ждут заказ</div>
+                <div id="waitingCustomers" class="status-value">0</div>
+            </div>
+            <div class="status-box">
+                <div class="status-label">Готовый заказ</div>
+                <div id="readyOrder" class="status-value">-</div>
+            </div>
+            <div class="queue-box">
+                <div class="queue-label">Список клиентов ожидающих выдачи</div>
+                <div id="pickupCustomerList" class="queue-items"></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="statistics">
+        <h2>📈 Статистика</h2>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-label">Всего клиентов</div>
+                <div class="stat-value" id="totalCustomers">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Принято заказов</div>
+                <div class="stat-value" id="processedOrders">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Отдано заказов</div>
+                <div class="stat-value" id="completedOrders">0</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Статус симуляции</div>
+                <div class="stat-value" id="simulationStatus">Остановлена</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="logs">
+        <h2>📋 Логи симуляции</h2>
+        <div class="log-controls">
+            <button id="clearLogsBtn" class="btn btn-secondary">Очистить логи</button>
+        </div>
+        <div id="logContainer" class="log-container"></div>
+    </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script src="scripts/app.js"></script>
 </body>
 </html>

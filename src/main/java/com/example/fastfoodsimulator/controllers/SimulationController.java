@@ -25,6 +25,7 @@ public class SimulationController {
     private boolean isRunning = false;
     @GetMapping("/start")
     public void startSimulation(@RequestParam int kitchenCompletionTime, @RequestParam int waiterServingTime, @RequestParam int customerArrivalTime){
+        System.out.println(customerArrivalTime+" "+waiterServingTime);
         if(isRunning){
             return;
         }

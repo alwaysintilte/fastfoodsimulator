@@ -15,17 +15,19 @@ public class CustomerGenerator implements Runnable {
     private final BlockingQueue<Customer> customerQueue = new LinkedBlockingQueue<>();
     private Integer interval;
     private boolean running;
-    public CustomerGenerator(){
-        this.interval = 3000;
-    }
+    public CustomerGenerator(){}
     public BlockingQueue<Customer> getCustomerQueue() {
         return customerQueue;
+    }
+    public void clearCustomerQueue() {
+        customerQueue.clear();
     }
     public void setInterval(Integer interval){
         this.interval = interval;
     }
     public void stop() {
         running=false;
+        clearCustomerQueue();
     }
     public void start() {
         running=true;
